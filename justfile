@@ -90,6 +90,8 @@ verify: build
 csvtest: build
     #!/usr/bin/env bash
     set -uo pipefail
+    export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+    export WAYLAND_DISPLAY="$(ls "$XDG_RUNTIME_DIR" 2>/dev/null | grep -m1 -E '^wayland-[0-9]+$' || echo wayland-0)"
     d="$HOME/.cache/tables-csvtest"; rm -rf "$d"; mkdir -p "$d"
     printf 'name,qty,price\nApples,3,1.50\nPears,12,0.80\n' > "$d/in.csv"
     flatpak run --env=PYTHONUNBUFFERED=1 --filesystem="$d" \
