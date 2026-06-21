@@ -71,12 +71,16 @@ verify: build
     export XDG_RUNTIME_DIR="/run/user/$(id -u)"
     export WAYLAND_DISPLAY="$(ls "$XDG_RUNTIME_DIR" 2>/dev/null | grep -m1 -E '^wayland-[0-9]+$' || echo wayland-0)"
     log=$(mktemp)
-    timeout 8 flatpak run {{app_id}} >"$log" 2>&1 &
+    timeout 8 flatpak run --env=PYTHONUNBUFFERED=1 {{app_id}} >"$log" 2>&1 &
     pid=$!; sleep 6
     kill "$pid" 2>/dev/null || true
     echo "--- console ---"; cat "$log"
-    if grep -q "engine ready" "$log" && grep -q "HyperFormula ready" "$log"; then
-        echo "VERIFY: PASS (Jspreadsheet + HyperFormula loaded)"
+    # PASS requires: engine JS loaded (console) AND the JS->Python bridge delivered
+    # the 'ready' message (the Python print) — proving suite-common #2 works.
+    if grep -q "\[tables\] engine ready" "$log" \
+       && grep -q "HyperFormula ready" "$log" \
+       && grep -q "Jspreadsheet ready" "$log"; then
+        echo "VERIFY: PASS (grid + HyperFormula loaded; JS<->Python bridge live)"
     else
         echo "VERIFY: FAIL"; exit 1
     fi
