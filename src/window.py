@@ -380,8 +380,10 @@ class TablesWindow(SuiteWindow):
     def _run_guitest_setup(self):
         """TABLES_GUITEST=<dir>: load fixture, enable save-without-dialog.
 
-        The dogtail test drives GUI actions, then clicks Save (which
-        now writes to <dir>/out.xlsx without the file dialog).
+        The dogtail test drives GUI actions. The app auto-saves to
+        <dir>/out.xlsx after 15s (enough time for AT-SPI interactions).
+        Header bar icon-only Gtk.Buttons are not AT-SPI-accessible in GTK4,
+        so we can't drive Save via dogtail.
         """
         base = self._guitest
         fixture = os.path.join(base, 'fixture.xlsx')
@@ -394,6 +396,16 @@ class TablesWindow(SuiteWindow):
             self.sheets[0][2] = {}
             self.webview.send('load', self.sheets[0][1])
             print('[tables] guitest: using built-in test data', flush=True)
+        # Auto-save after 15s so the oracle can verify the formatted output.
+        GLib.timeout_add(15000, self._guitest_autosave)
+
+    def _guitest_autosave(self):
+        path = os.path.join(self._guitest, 'out.xlsx')
+        self._save_path = path
+        self._after_save = self._write_all
+        self.webview.send('getData', None)  # capture grid state
+        print('[tables] guitest: autosave requested', flush=True)
+        return False
 
     # ----- helpers ----------------------------------------------------------
 
