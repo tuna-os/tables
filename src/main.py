@@ -85,6 +85,12 @@ class TablesApplication(SuiteApplication):
     def _on_prev_sheet(self, *a):
         self._call_win('prev_sheet')
 
+    def _on_select(self, action, *a):
+        """Ctrl+Space: select column. Shift+Space: select row."""
+        name = action.get_name()
+        msg = 'selectColumn' if name == 'select-column' else 'selectRow'
+        self._call_win('webview_send', msg, None)
+
     def _on_fill(self, action, *a):
         """Ctrl+D: fill down. Ctrl+R: fill right."""
         name = action.get_name()
