@@ -41,7 +41,7 @@ jobs:
           retention-days: 1
 
   publish:
-    name: Publish to GHCR + update index
+    name: Publish to GHCR
     needs: build-oci
     runs-on: ubuntu-latest
     steps:
@@ -53,36 +53,30 @@ jobs:
       - name: Push OCI to GHCR
         run: |
           echo "${{ secrets.GITHUB_TOKEN }}" | skopeo login ghcr.io -u "${{ github.actor }}" --password-stdin
-          skopeo copy oci:tables.oci docker://ghcr.io/${{ github.repository_owner }}/tables:latest
+          skopeo copy oci:tables.oci docker://ghcr.io/tuna-os/tables:latest
           TAG="${{ github.ref_name }}"
           if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
-            skopeo copy oci:tables.oci docker://ghcr.io/${{ github.repository_owner }}/tables:${TAG}
+            skopeo copy oci:tables.oci docker://ghcr.io/tuna-os/tables:${TAG}
           fi
-      - name: Clone flatpak-index
+      - name: Update central index (tuna-os/docs)
         run: |
-          git clone --depth 1 https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository_owner }}/flatpak-index.git index-repo
-      - name: Update index
-        run: |
-          mkdir -p index-repo/index/static
-          # Copy OCI to index
-          cp -r tables.oci/* index-repo/index/static/ 2>/dev/null || true
-          # Generate appstream data if available
-          echo "Updated tables OCI at $(date)" > index-repo/index/tables-version.txt
-      - name: Commit and push index
-        run: |
+          # Clone the docs repo
+          git clone --depth 1 https://x-access-token:${{ secrets.FLATPAK_INDEX_TOKEN }}@github.com/tuna-os/docs.git index-repo
+          # Run update-index to update index/static
+          pip install requests  # may be needed for update-index dependencies
+          python3 .github/scripts/update-index.py \
+            --oci-dir tables.oci \
+            --index-file index-repo/static/flatpak/index/static \
+            --repo-name tuna-os/tables \
+            --tags latest
+          # Commit and push
           cd index-repo
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add -A
+          git add static/flatpak/index/static
           if git diff --cached --quiet; then
-            echo "No changes to index"
+            echo "No index changes"
           else
-            git commit -m "chore: update tables Flatpak OCI [${{ github.ref_name }}]"
+            git commit -m "chore(flatpak): update Tables OCI index [${{ github.ref_name }}]"
             git push origin main
           fi
-      - name: Trigger gh-pages deploy
-        run: |
-          curl -X POST \
-            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            -H "Accept: application/vnd.github.v3+json" \
-            "https://api.github.com/repos/${{ github.repository_owner }}/flatpak-index/pages/builds"
