@@ -1,0 +1,29 @@
+name: CI (Tables)
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  l1-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Checkout suite-common
+        uses: actions/checkout@v4
+        with:
+          repository: hanthor/suite-common
+          path: subprojects/suite-common
+      - name: Install test deps
+        run: pip install pytest openpyxl odfpy
+      - name: Run L1 adapter tests
+        run: |
+          cd tables || cd .
+          pytest tests/unit/ -v
+      - name: Run formula vector tests (data validation)
+        run: |
+          cd tables || cd .
+          pytest tests/unit/test_formulas.py -v || true

@@ -81,6 +81,22 @@
       applyFormat(data && data.css);
     } else if (name === 'getData') {
       post({ type: 'data', data: sheet ? sheet.getData() : [], styles: currentStyles() });
+    } else if (name === 'formulaTest') {
+      // TABLES_FORMULATEST: compute formula with given input row via HyperFormula.
+      try {
+        var inputs = data.row || [];
+        var formula = data.formula || '';
+        var hfData = [inputs];
+        // Add the formula in row 2, col 0
+        var formulaRow = new Array(inputs.length || 1).fill('');
+        formulaRow[0] = formula;
+        hfData.push(formulaRow);
+        var hf = HyperFormula.buildFromArray(hfData, { licenseKey: 'gpl-v3' });
+        var result = hf.getCellValue({ sheet: 0, row: 1, col: 0 });
+        post({ type: 'formulaResult', result: result });
+      } catch (e) {
+        post({ type: 'formulaResult', result: '#ERROR: ' + e.message });
+      }
     }
   };
 

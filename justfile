@@ -181,3 +181,41 @@ guitest: build
 
 clean:
     rm -rf subprojects/suite-common "$HOME/.cache/tables-flatpak"
+
+# Run L1 adapter round-trip tests (pytest, no display).
+l1test:
+    pip install pytest openpyxl odfpy 2>/dev/null
+    pytest tests/unit/ -v
+
+# Formula conformance test (ODF OpenFormula vectors via HyperFormula).
+formulatest: build
+    #!/usr/bin/env bash
+    set -uo pipefail
+    export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+    export WAYLAND_DISPLAY="$(ls "$XDG_RUNTIME_DIR" 2>/dev/null | grep -m1 -E '^wayland-[0-9]+$' || echo wayland-0)"
+    d="$HOME/.cache/tables-formulatest"; rm -rf "$d"; mkdir -p "$d"
+    flatpak kill {{app_id}} 2>/dev/null || true; sleep 1
+    timeout 15 flatpak run --env=PYTHONUNBUFFERED=1 --env=TABLES_FORMULATEST="$d" \
+        {{app_id}} >"$d/log" 2>&1 &
+    pid=$!; sleep 12; flatpak kill {{app_id}} 2>/dev/null || true; kill "$pid" 2>/dev/null || true
+    echo "--- log ---"; grep formulatest "$d/log" || cat "$d/log"
+    if grep -q 'formulatest: DONE' "$d/log" && ! grep -q 'formulatest.*FAIL' "$d/log"; then
+        echo "FORMULATEST: PASS"; rm -rf "$d"
+    else
+        echo "FORMULATEST: FAIL"; exit 1
+    fi
+
+# L3 golden-file E2E (dogtail GUI + oracle verification).
+e2etest: build
+    #!/usr/bin/env bash
+    set -uo pipefail
+    export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+    export WAYLAND_DISPLAY="$(ls "$XDG_RUNTIME_DIR" 2>/dev/null | grep -m1 -E '^wayland-[0-9]+$' || echo wayland-0)"
+    export DBUS_SESSION_BUS_ADDRESS="unix:path=$XDG_RUNTIME_DIR/bus"
+    d="$HOME/.cache/tables-e2e"; rm -rf "$d"; mkdir -p "$d"
+    flatpak kill {{app_id}} 2>/dev/null || true; sleep 1
+    setsid flatpak run --filesystem="$d" --env=TABLES_GUITEST="$d" {{app_id}} >/tmp/tables-e2e.log 2>&1 &
+    sleep 8
+    python3 tests/gui/test_tables_e2e.py "$d"; rc=$?
+    flatpak kill {{app_id}} 2>/dev/null || true
+    exit $rc

@@ -37,6 +37,8 @@ class TablesWindow(SuiteWindow):
         self._selftest = os.environ.get('TABLES_SELFTEST')
         self._multitest = os.environ.get('TABLES_MULTITEST')
         self._styletest = os.environ.get('TABLES_STYLETEST')
+        self._formulatest = os.environ.get('TABLES_FORMULATEST')
+        self._guitest = os.environ.get('TABLES_GUITEST')
         print('[tables] selftest =', self._selftest, flush=True)
 
         self.webview = SuiteWebView(on_message=self._on_message)
@@ -149,8 +151,14 @@ class TablesWindow(SuiteWindow):
                 self._run_multitest()
             if self._styletest:
                 self._run_styletest()
+            if self._formulatest:
+                self._run_formulatest()
+            if self._guitest:
+                self._run_guitest_setup()
         elif kind == 'changed':
             self._dirty = True
+        elif kind == 'formulaResult':
+            self._on_formula_result(payload)
         elif kind == 'data':
             # Capture the active sheet (values + styles) into the workbook.
             self.sheets[self.active][1] = self._trim(payload.get('data') or [])
@@ -209,6 +217,13 @@ class TablesWindow(SuiteWindow):
     def save_file(self):
         if self._save_path:
             self._after_save = self._write_all
+            self.webview.send('getData', None)
+            return
+        # TABLES_GUITEST: save to predetermined path without dialog
+        if self._guitest:
+            path = os.path.join(self._guitest, 'out.xlsx')
+            self._save_path = path
+            self._after_save = lambda: (self._write_all(), print('[tables] guitest: saved', path, flush=True))
             self.webview.send('getData', None)
             return
         dialog = Gtk.FileDialog(title='Save Spreadsheet')
@@ -307,6 +322,78 @@ class TablesWindow(SuiteWindow):
                   f'{"PASS" if ok else "FAIL"}', flush=True)
         except Exception as exc:  # noqa: BLE001
             print('[tables] multitest verify error:', exc, flush=True)
+
+    def _run_formulatest(self):
+        """TABLES_FORMULATEST: validate formula vectors through HyperFormula.
+
+        Loads a 1-row sheet with input values, sets the formula in B1,
+        sends it to the engine, and prints the computed result.
+        The pytest harness reads stdout for verification.
+        """
+        base = os.environ['TABLES_FORMULATEST']
+        vectors = [
+            # (label, formula, inputs, expected)
+            ('sum', '=SUM(A1:C1)', [1, 2, 3], 6),
+            ('avg', '=AVERAGE(A1:B1)', [10, 20], 15),
+            ('min', '=MIN(A1:C1)', ['5', '2', '8'], 2),
+            ('max', '=MAX(A1:C1)', ['5', '2', '8'], 8),
+            ('add', '=A1+B1', [3, 7], 10),
+            ('if_true', '=IF(A1>0,"pos","neg")', [5], 'pos'),
+            ('if_false', '=IF(A1>0,"pos","neg")', [-3], 'neg'),
+            ('round', '=ROUND(A1,0)', [3.7], 4),
+            ('sqrt', '=SQRT(9)', [], 3),
+            ('abs', '=ABS(A1)', [-7], 7),
+        ]
+        self._formula_vectors = vectors
+        self._formula_idx = 0
+        self._formula_base = base
+        print('[tables] formulatest: running', len(vectors), 'vectors', flush=True)
+        GLib.timeout_add(400, self._run_next_formula)
+
+    def _run_next_formula(self):
+        if self._formula_idx >= len(self._formula_vectors):
+            print('[tables] formulatest: DONE', flush=True)
+            return False
+        label, formula, inputs, expected = self._formula_vectors[self._formula_idx]
+        self._formula_idx += 1
+        # Load inputs as row 1
+        rows = [list(map(str, inputs))]
+        self.sheets[0][1] = rows
+        # Send formula to engine for computation
+        payload = {'type': 'formulaTest', 'formula': formula, 'row': rows[0]}
+        self._formula_expected = expected
+        self._formula_label = label
+        self.webview.send('formulaTest', payload)
+        return False  # one-shot
+
+    def _on_formula_result(self, payload):
+        result = payload.get('result')
+        expected = self._formula_expected
+        label = self._formula_label
+        ok = str(result) == str(expected)
+        print(f'[tables] formulatest {label}: {result!r} == {expected!r} -> '
+              f'{"PASS" if ok else "FAIL"}', flush=True)
+        GLib.timeout_add(100, self._run_next_formula)
+
+    # ----- guitest (TABLES_GUITEST) ----------------------------------------
+
+    def _run_guitest_setup(self):
+        """TABLES_GUITEST=<dir>: load fixture, enable save-without-dialog.
+
+        The dogtail test drives GUI actions, then clicks Save (which
+        now writes to <dir>/out.xlsx without the file dialog).
+        """
+        base = self._guitest
+        fixture = os.path.join(base, 'fixture.xlsx')
+        if os.path.exists(fixture):
+            self._load_path(fixture)
+            print('[tables] guitest: loaded fixture', fixture, flush=True)
+        else:
+            # Create a minimal fixture so the grid has data to format.
+            self.sheets[0][1] = [['Hello', 'World'], [42, 7]]
+            self.sheets[0][2] = {}
+            self.webview.send('load', self.sheets[0][1])
+            print('[tables] guitest: using built-in test data', flush=True)
 
     # ----- helpers ----------------------------------------------------------
 

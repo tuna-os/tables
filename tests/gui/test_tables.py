@@ -6,31 +6,25 @@
 # headlessly on Wayland (no X display). Run on the HOST against a launched app:
 #   python3 tests/gui/test_tables.py        (`just guitest` handles launch/teardown)
 
+import os
 import sys
 import time
 
-import pyatspi  # noqa: E402
+# Resolve suite-common: sibling clone (dev layout) or subproject (Flatpak build).
+for _candidate in (
+    os.path.join(os.path.dirname(__file__), '..', '..', '..', 'suite-common'),
+    os.path.join(os.path.dirname(__file__), '..', '..', 'subprojects', 'suite-common'),
+):
+    if os.path.isdir(_candidate):
+        sys.path.insert(0, _candidate)
+        break
+
 from dogtail import tree  # noqa: E402
-
-
-def pressed(node):
-    # GTK4 toggle buttons expose STATE_PRESSED (not STATE_CHECKED) when active.
-    return pyatspi.STATE_PRESSED in node.getState().getStates()
-
-
-def click(node):
-    """Activate a node via its AT-SPI action (no X mouse synthesis)."""
-    for action in ('click', 'activate', 'press'):
-        try:
-            node.doActionNamed(action)
-            return
-        except Exception:
-            continue
-    raise AssertionError(f'no clickable action on {node}')
+from suite_common.test_helpers import click, count_nodes, find_app, pressed, toggle_and_assert
 
 
 def main():
-    app = tree.root.application('tables')
+    app = find_app('tables')
     print('found application: tables')
 
     bold = app.child(name='Bold', roleName='toggle button')
@@ -38,10 +32,7 @@ def main():
     app.child(name='Underline', roleName='toggle button')
     print('found formatting toggles: Bold, Italic, Underline')
 
-    assert not pressed(bold), 'Bold should start unpressed'
-    click(bold)
-    time.sleep(0.6)
-    assert pressed(bold), 'Bold should be pressed after AT-SPI click'
+    toggle_and_assert(bold)
     print('Bold toggles via AT-SPI: OK')
 
     click(italic)
@@ -60,16 +51,7 @@ def main():
     print('sheet switcher (combo box) found: OK')
 
     # The WebKit grid is bridged to AT-SPI — many descendant cells are present.
-    def count(node):
-        total = 1
-        try:
-            for child in node.children:
-                total += count(child)
-        except Exception:
-            pass
-        return total
-
-    descendants = count(app)
+    descendants = count_nodes(app)
     assert descendants > 50, f'expected the grid bridged to AT-SPI, got {descendants} nodes'
     print(f'WebKit grid bridged to AT-SPI: {descendants} accessible nodes')
 
