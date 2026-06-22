@@ -116,7 +116,7 @@ impl TablesWindow {
         let container = gtk::Box::new(gtk::Orientation::Vertical, 0);
         container.append(&header);
         container.append(&main_box);
-        win.set_child(Some(win.set_content(Some(&container))container));
+        win.set_child(Some(win.set_child(Some(&container))container));
 
         Self { window: win, _grid: grid, model }
     }
