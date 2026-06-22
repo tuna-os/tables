@@ -3,7 +3,6 @@
 
 use gtk4 as gtk;
 use gtk::prelude::*;
-use adw::prelude::*;
 use gtk::{gio, glib};
 
 const ROWS: usize = 100;
@@ -54,7 +53,7 @@ impl TablesWindow {
         // Row list model
         let list_model = gio::ListStore::new::<glib::Object>();
         for _ in 0..ROWS {
-            list_model.append(&glib::Object::new());
+            list_model.append(&glib::Object::new::<glib::Object>());
         }
 
         let cells_clone = cells.clone();
