@@ -28,14 +28,15 @@ class TablesWindow(SuiteWindow):
         self._moduledir = os.path.dirname(__file__)
         self._save_path = None
         self._dirty = False
-        # The workbook: list of [name, rows]. The grid edits one at a time.
-        self.sheets = [['Sheet 1', []]]
+        # The workbook: list of [name, rows, styles]. The grid edits one at a time.
+        self.sheets = [['Sheet 1', [], {}]]
         self.active = 0
         self._pending_active = None   # sheet to switch to after saving current
         self._after_save = None       # callable to run once active sheet is captured
 
         self._selftest = os.environ.get('TABLES_SELFTEST')
         self._multitest = os.environ.get('TABLES_MULTITEST')
+        self._styletest = os.environ.get('TABLES_STYLETEST')
         print('[tables] selftest =', self._selftest, flush=True)
 
         self.webview = SuiteWebView(on_message=self._on_message)
@@ -95,16 +96,20 @@ class TablesWindow(SuiteWindow):
                 self._run_selftest()
             if self._multitest:
                 self._run_multitest()
+            if self._styletest:
+                self._run_styletest()
         elif kind == 'changed':
             self._dirty = True
         elif kind == 'data':
-            # Capture the active sheet back into the workbook, then dispatch.
+            # Capture the active sheet (values + styles) into the workbook.
             self.sheets[self.active][1] = self._trim(payload.get('data') or [])
+            self.sheets[self.active][2] = payload.get('styles') or {}
             if self._pending_active is not None:
                 self.active = self._pending_active
                 self._pending_active = None
                 self._refresh_sheet_dropdown()
                 self.webview.send('load', self.sheets[self.active][1])
+                self.webview.send('applyStyles', self.sheets[self.active][2])
             elif self._after_save is not None:
                 callback = self._after_save
                 self._after_save = None
@@ -137,16 +142,17 @@ class TablesWindow(SuiteWindow):
             self._toast(f'Could not open: {exc}')
             return
         self.sheets = []
-        for name, rows in sheets:
+        for name, rows, styles in sheets:
             width = max((len(r) for r in rows), default=1)
             rect = [list(r) + [''] * (width - len(r)) for r in rows]
-            self.sheets.append([name or 'Sheet', rect])
+            self.sheets.append([name or 'Sheet', rect, styles or {}])
         if not self.sheets:
-            self.sheets = [['Sheet 1', []]]
+            self.sheets = [['Sheet 1', [], {}]]
         self.active = 0
         self._save_path = path
         self._refresh_sheet_dropdown()
         self.webview.send('load', self.sheets[0][1])
+        self.webview.send('applyStyles', self.sheets[0][2])
         self._toast(f'Opened {os.path.basename(path)}')
 
     def save_file(self):
@@ -171,8 +177,9 @@ class TablesWindow(SuiteWindow):
         if not self._save_path:
             return
         try:
-            fileio.write_spreadsheet(self._save_path,
-                                     [(name, rows) for name, rows in self.sheets])
+            fileio.write_spreadsheet(
+                self._save_path,
+                [(name, rows, styles) for name, rows, styles in self.sheets])
         except Exception as exc:  # noqa: BLE001
             self._toast(f'Could not save: {exc}')
             return
@@ -223,6 +230,21 @@ class TablesWindow(SuiteWindow):
             GLib.timeout_add(700, lambda: (self.webview.send('getData', None), False)[1])
         except Exception as exc:  # noqa: BLE001
             print('[tables] multitest error:', exc, flush=True)
+
+    def _run_styletest(self):
+        base = self._styletest
+        path = os.path.join(base, 's.xlsx')
+        rows = [['x', 'y'], ['1', '2']]
+        styles = {'A1': 'font-weight:bold', 'B1': 'text-align:center'}
+        try:
+            fileio.write_spreadsheet(path, [('Sheet1', rows, styles)])
+            back = fileio.read_spreadsheet(path)
+            bstyles = back[0][2]
+            ok = 'bold' in bstyles.get('A1', '') and 'center' in bstyles.get('B1', '')
+            print(f'[tables] styletest A1={bstyles.get("A1")!r} '
+                  f'B1={bstyles.get("B1")!r} -> {"PASS" if ok else "FAIL"}', flush=True)
+        except Exception as exc:  # noqa: BLE001
+            print('[tables] styletest error:', exc, flush=True)
 
     def _multitest_save_and_verify(self):
         self._write_all()   # writes all sheets (active updated, others preserved)

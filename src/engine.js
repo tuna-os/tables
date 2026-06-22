@@ -43,13 +43,22 @@
     post({ type: 'ready', engine: 'jspreadsheet-ce' });
   }
 
+  function currentStyles() {
+    try { return sheet ? sheet.getStyle() : {}; }
+    catch (e) { return {}; }
+  }
+
   // Python -> JS
   window.bridgeReceive = function (name, data) {
     if (name === 'load') {
       build(data);
       post({ type: 'changed' });
+    } else if (name === 'applyStyles') {
+      if (sheet && data && Object.keys(data).length) {
+        try { sheet.setStyle(data); } catch (e) { console.log('setStyle failed: ' + e); }
+      }
     } else if (name === 'getData') {
-      post({ type: 'data', data: sheet ? sheet.getData() : [] });
+      post({ type: 'data', data: sheet ? sheet.getData() : [], styles: currentStyles() });
     }
   };
 
