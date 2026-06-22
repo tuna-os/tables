@@ -4,6 +4,7 @@
 use gtk4 as gtk;
 use gtk::prelude::*;
 use gtk::{gio, glib};
+use libadwaita::prelude::AdwApplicationWindowExt;  // for set_content
 
 const ROWS: usize = 100;
 const COLS: usize = 26;
