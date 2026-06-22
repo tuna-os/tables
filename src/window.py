@@ -296,7 +296,7 @@ class TablesWindow(SuiteWindow):
         self._write_all()   # writes all sheets (active updated, others preserved)
         try:
             back = fileio.read_spreadsheet(self._mt_out)
-            names = [n for n, _ in back]
+            names = [sheet[0] for sheet in back]
             ok = names == ['Alpha', 'Beta']
             print(f'[tables] multitest sheets={names} -> '
                   f'{"PASS" if ok else "FAIL"}', flush=True)
