@@ -45,6 +45,9 @@
       onchange: function () { post({ type: 'changed' }); },
       onselection: function (el2, x1, y1, x2, y2) { selection = [x1, y1, x2, y2]; }
     });
+    // Ensure A1 is selected so format actions (Bold, Italic, etc.)
+    // have a target.  Without this, applyFormat returns early.
+    selection = [0, 0, 0, 0];
   }
 
   function init() {
