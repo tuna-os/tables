@@ -1,6 +1,6 @@
 __pycache__/
 *.pyc
-/subprojects/suite-common/
 /.flatpak-builder/
 /build*/
+/_build*/
 /repo/

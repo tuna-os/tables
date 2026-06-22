@@ -27,11 +27,20 @@
             "build-commands": [
                 "pip3 install --prefix=${FLATPAK_DEST} --no-warn-script-location openpyxl python-calamine odfpy"
             ],
-            "comment": "Network build is fine for the himachal pipeline; for Flathub these become vendored wheels (flatpak-pip-generator)."
+            "comment": "Network build for himachal pipeline; Flathub uses vendored wheels."
         },
         {
             "name": "tables",
-            "buildsystem": "meson",
+            "buildsystem": "simple",
+            "build-options": {
+                "build-args": [ "--share=network" ]
+            },
+            "build-commands": [
+                "rm -rf subprojects/suite-common _build",
+                "git clone --depth 1 https://github.com/hanthor/suite-common.git subprojects/suite-common",
+                "meson setup --prefix=${FLATPAK_DEST} --reconfigure _build",
+                "ninja -C _build install"
+            ],
             "sources": [
                 {
                     "type": "dir",
