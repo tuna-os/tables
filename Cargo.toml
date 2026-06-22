@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 gtk4 = { version = "0.9", package = "gtk4" }
 libadwaita = "0.7"
+ironcalc = "0.7"
 ironcalc_base = "0.7"
 serde_json = "1"
 
