@@ -6,7 +6,7 @@ edition = "2021"
 [dependencies]
 gtk4 = { version = "0.9", package = "gtk4" }
 libadwaita = "0.7"
-suite-common = { git = "https://github.com/hanthor/suite-common-rust.git" }
+suite-common = { path = "../suite-common-rust" }
 
 [[bin]]
 name = "tables"
