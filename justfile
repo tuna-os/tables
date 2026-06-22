@@ -37,7 +37,7 @@ setup:
 
 # Build the Flatpak and install it to the user installation.
 # Build artifacts live outside the source tree so `type: dir` only copies sources.
-build: setup
+build: setup lint
     #!/usr/bin/env bash
     set -euo pipefail
     # org.flatpak.Builder is sandboxed: pin its cwd to this project and give it
