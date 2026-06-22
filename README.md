@@ -7,8 +7,8 @@ with ~400 Excel-compatible functions.  Reads and writes CSV, XLSX, and ODS files
 [openpyxl](https://openpyxl.readthedocs.io/), [python-calamine](https://github.com/tafia/calamine),
 and [odfpy](https://github.com/eea/odfpy).
 
-Shares the [suite-common](https://github.com/hanthor/suite-common) scaffold with
-[Letters](https://github.com/hanthor/letters) and [Decks](https://github.com/hanthor/decks).
+Shares the [suite-common](https://github.com/tuna-os/suite-common) scaffold with
+[Letters](https://github.com/tuna-os/letters) and [Decks](https://github.com/tuna-os/decks).
 
 ## Features
 
@@ -31,7 +31,7 @@ flatpak install tuna-os org.tunaos.tables
 ## Build
 
 ```bash
-git clone https://github.com/hanthor/tables.git
+git clone https://github.com/tuna-os/tables.git
 cd tables
 just setup   # clones suite-common + vendors JS engines
 just build   # builds & installs Flatpak
