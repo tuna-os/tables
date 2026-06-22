@@ -107,10 +107,11 @@ impl TablesWindow {
         main_box.append(&formula_bar);
         main_box.append(&scroll);
 
-        let toolbar_view = adw::ToolbarView::new();
-        toolbar_view.add_top_bar(&header);
-        toolbar_view.set_content(Some(&main_box));
-        window.set_content(Some(&toolbar_view));
+        // Use Box instead of ToolbarView (gtk4-rs adw API differs)
+        let container = gtk::Box::new(gtk::Orientation::Vertical, 0);
+        container.append(&header);
+        container.append(&main_box);
+        window.set_content(Some(&container));
 
         Self { window, cells }
     }

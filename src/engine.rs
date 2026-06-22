@@ -8,7 +8,7 @@
 // Decision 2026-06-22: IronCalc is the spreadsheet engine.
 // API is evolving (0.7.1) — we save to file frequently as safety net.
 
-use ironcalc::{import, export};
+use ironcalc::{import, export, Model};
 use std::path::Path;
 
 /// Wrapper around IronCalc Model with convenience accessors.
