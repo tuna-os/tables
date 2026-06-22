@@ -84,6 +84,38 @@
       applyFormat(data && data.css);
     } else if (name === 'getData') {
       post({ type: 'data', data: sheet ? sheet.getData() : [], styles: currentStyles() });
+    } else if (name === 'selectColumn') {
+      if (sheet && selection) {
+        sheet.updateSelection([selection[0], 0, selection[0], sheet.rows.length - 1]);
+      }
+    } else if (name === 'selectRow') {
+      if (sheet && selection) {
+        sheet.updateSelection([0, selection[1], sheet.headers.length - 1, selection[1]]);
+      }
+    } else if (name === 'fillDown') {
+      if (sheet) {
+        var data = sheet.getData();
+        for (var c = selection[0]; c <= selection[2]; c++) {
+          var val = data[selection[1]][c];
+          for (var r = selection[1] + 1; r <= selection[3]; r++) {
+            data[r][c] = val;
+            sheet.setValue(c, r, val);
+          }
+        }
+        post({ type: 'changed' });
+      }
+    } else if (name === 'fillRight') {
+      if (sheet) {
+        var data = sheet.getData();
+        for (var r = selection[1]; r <= selection[3]; r++) {
+          var val = data[r][selection[0]];
+          for (var c = selection[0] + 1; c <= selection[2]; c++) {
+            data[r][c] = val;
+            sheet.setValue(c, r, val);
+          }
+        }
+        post({ type: 'changed' });
+      }
     } else if (name === 'formulaTest') {
       // TABLES_FORMULATEST: compute formula with given input row via HyperFormula.
       try {

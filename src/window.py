@@ -82,9 +82,21 @@ class TablesWindow(SuiteWindow):
         idx = dropdown.get_selected()
         if idx == self.active or idx >= len(self.sheets):
             return
-        # Capture the current sheet, then switch.
+        self._switch_to_sheet(idx)
+
+    def _switch_to_sheet(self, idx):
         self._pending_active = idx
         self.webview.send('getData', None)
+
+    def next_sheet(self):
+        """Ctrl+PgDn: switch to the next sheet."""
+        target = (self.active + 1) % len(self.sheets)
+        self._switch_to_sheet(target)
+
+    def prev_sheet(self):
+        """Ctrl+PgUp: switch to the previous sheet."""
+        target = (self.active - 1) % len(self.sheets)
+        self._switch_to_sheet(target)
 
     def _add_format_toolbar(self):
         # Letters idiom: a centered formatting toolbar that applies cell styles,
