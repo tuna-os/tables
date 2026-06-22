@@ -7,7 +7,6 @@ edition = "2021"
 gtk4 = { version = "0.9", package = "gtk4" }
 libadwaita = "0.7"
 formualizer = "0.7"
-typst = "0.12"
 
 [[bin]]
 name = "tables"
