@@ -1,0 +1,51 @@
+name: Auto Tag Version
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  tag:
+    name: Create Git Tag
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check version and auto-bump
+        id: get_version
+        run: |
+          VERSION=$(grep -oE "version: '[^']+'" meson.build | head -n1 | cut -d"'" -f2)
+          TAG_NAME="v$VERSION"
+
+          if git rev-parse "$TAG_NAME" >/dev/null 2>&1; then
+            echo "Tag $TAG_NAME already exists. Auto-incrementing patch."
+            IFS='.' read -r major minor patch <<< "$VERSION"
+            new_patch=$((patch + 1))
+            NEW_VERSION="$major.$minor.$new_patch"
+            NEW_TAG="v$NEW_VERSION"
+            echo "New version: $NEW_VERSION"
+            sed -i "s/version: '$VERSION'/version: '$NEW_VERSION'/g" meson.build
+            git config --global user.name "github-actions[bot]"
+            git config --global user.email "github-actions[bot]@users.noreply.github.com"
+            git add meson.build
+            git commit -m "chore: bump version to $NEW_VERSION [skip ci]"
+            git push origin main
+            echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          else
+            echo "Tag $TAG_NAME does not exist. Using current version."
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create and push tag
+        run: |
+          TAG_NAME="v${{ steps.get_version.outputs.version }}"
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "$TAG_NAME" -m "Release $TAG_NAME"
+          git push origin "$TAG_NAME"
