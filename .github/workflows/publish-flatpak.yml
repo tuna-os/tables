@@ -53,10 +53,10 @@ jobs:
       - name: Push OCI to GHCR
         run: |
           echo "${{ secrets.GITHUB_TOKEN }}" | skopeo login ghcr.io -u "${{ github.actor }}" --password-stdin
-          skopeo copy oci:tables.oci docker://ghcr.io/tuna-os/tables:latest
+          skopeo copy oci:tables.oci docker://ghcr.io/hanthor/tables:latest
           TAG="${{ github.ref_name }}"
           if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
-            skopeo copy oci:tables.oci docker://ghcr.io/tuna-os/tables:${TAG}
+            skopeo copy oci:tables.oci docker://ghcr.io/hanthor/tables:${TAG}
           fi
       - name: Update central index (tuna-os/docs)
         run: |
@@ -67,7 +67,7 @@ jobs:
           python3 .github/scripts/update-index.py \
             --oci-dir tables.oci \
             --index-file index-repo/static/flatpak/index/static \
-            --repo-name tuna-os/tables \
+            --repo-name hanthor/tables \
             --tags latest
           # Commit and push
           cd index-repo
