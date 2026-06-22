@@ -7,7 +7,7 @@ import gi
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
 
-from gi.repository import Gio, Adw  # noqa: E402
+from gi.repository import Gio, GLib, Adw  # noqa: E402
 from suite_common.application import SuiteApplication  # noqa: E402
 from .window import TablesWindow  # noqa: E402
 
@@ -66,7 +66,7 @@ class TablesApplication(SuiteApplication):
 
     def _add_format_toggle(self, name, css_on, css_off, accels):
         action = Gio.SimpleAction.new_stateful(
-            name, None, Gio.Variant.new_boolean(False))
+            name, None, GLib.Variant.new_boolean(False))
         action.connect('change-state', self._on_format_toggle, css_on, css_off)
         self.add_action(action)
         if accels:
