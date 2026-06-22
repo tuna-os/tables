@@ -15,7 +15,7 @@ pub struct TablesWindow {
 
 impl TablesWindow {
     pub fn new(app: &gtk::Application) -> Self {
-        let win = gtk::ApplicationWindow::new(app);
+        let win = gtk::ApplicationWindow::builder().application(app).build();
         win.set_title(Some("Tables"));
         win.set_default_size(900, 600);
 
@@ -116,7 +116,7 @@ impl TablesWindow {
         let container = gtk::Box::new(gtk::Orientation::Vertical, 0);
         container.append(&header);
         container.append(&main_box);
-        win.set_content(Some(&container));
+        win.set_child(Some(win.set_content(Some(&container))container));
 
         Self { window: win, _grid: grid, model }
     }
