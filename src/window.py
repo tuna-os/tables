@@ -143,6 +143,32 @@ class TablesWindow(SuiteWindow):
         self.add_action_bar(primary=[bold, italic, underline],
                             extended=[left, center, right], more_menu=more)
 
+        # ── Data toolbar: merge, freeze, number format ──────────
+        merge_btn = Gtk.Button(label='Merge')
+        merge_btn.set_tooltip_text('Merge selected cells')
+        merge_btn.update_property([Gtk.AccessibleProperty.LABEL], ['Merge cells'])
+        merge_btn.connect('clicked', lambda b: self.webview.send('mergeCells', None))
+
+        self.freeze_combo = Gtk.DropDown.new_from_strings(
+            ['Freeze', 'Freeze 1 col', 'Freeze 1 row', 'Freeze 2 cols'])
+        self.freeze_combo.set_tooltip_text('Freeze panes')
+        self.freeze_combo.set_selected(0)
+        self.freeze_combo.connect('notify::selected', self._on_freeze)
+
+        self.number_combo = Gtk.DropDown.new_from_strings(
+            ['Number', 'Currency', 'Percent', 'Date', 'Plain text'])
+        self.number_combo.set_tooltip_text('Number format')
+        self.number_combo.set_selected(0)
+        self.number_combo.connect('notify::selected', self._on_number_format)
+
+        data_bar = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4,
+                          halign=Gtk.Align.CENTER, margin_top=4)
+        data_bar.add_css_class('toolbar')
+        data_bar.append(merge_btn)
+        data_bar.append(self.freeze_combo)
+        data_bar.append(self.number_combo)
+        self.toolbar_view.add_top_bar(data_bar)
+
     def _build_html(self):
         vendor_dir = os.path.join(self._moduledir, 'vendor')
         with open(os.path.join(self._moduledir, 'engine.js'), encoding='utf-8') as fh:

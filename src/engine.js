@@ -42,6 +42,17 @@
       data: rows,
       minDimensions: [12, 30],
       parseFormulas: true,
+      // ── Sort, filter, edit ────────────────────────────────────
+      columnSorting: true,
+      columnFilters: true,
+      columnDrag: true,
+      allowInsertRow: true,
+      allowDeleteRow: true,
+      allowInsertColumn: true,
+      allowDeleteColumn: true,
+      allowRenameColumn: true,
+      allowManualInsertColumn: true,
+      // ── Events ───────────────────────────────────────────────
       onchange: function () { post({ type: 'changed' }); },
       onselection: function (el2, x1, y1, x2, y2) { selection = [x1, y1, x2, y2]; }
     });
@@ -91,6 +102,27 @@
     } else if (name === 'selectRow') {
       if (sheet && selection) {
         sheet.updateSelection([0, selection[1], sheet.headers.length - 1, selection[1]]);
+      }
+    } else if (name === 'mergeCells') {
+      if (sheet && selection) {
+        sheet.mergeCells(selection[0], selection[1], selection[2], selection[3]);
+        post({ type: 'changed' });
+      }
+    } else if (name === 'freezeColumns') {
+      if (sheet) {
+        var n = data || 0;
+        sheet.freezeColumns(n);
+      }
+    } else if (name === 'freezeRows') {
+      if (sheet) {
+        var n = data || 0;
+        sheet.freezeRows(n);
+      }
+    } else if (name === 'setNumberFormat') {
+      if (sheet && selection && data) {
+        for (var c = selection[0]; c <= selection[2]; c++) {
+          sheet.setColumnFormat(c, data);
+        }
       }
     } else if (name === 'fillDown') {
       if (sheet) {
