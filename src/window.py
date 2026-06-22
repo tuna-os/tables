@@ -477,6 +477,11 @@ class TablesWindow(SuiteWindow):
 
     # ----- helpers ----------------------------------------------------------
 
+    def _on_chart_type(self, dropdown, _pspec):
+        """Store chart type selection.  Chart is added at save time."""
+        idx = dropdown.get_selected()
+        self._chart_type = [None, 'bar', 'line', 'pie'][idx] if idx < 4 else None
+
     def _on_freeze(self, dropdown, _pspec):
         idx = dropdown.get_selected()
         if idx == 0:  # Freeze (none)
