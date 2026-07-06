@@ -19,6 +19,7 @@ jobs:
         with:
           repository: hanthor/suite-common
           path: subprojects/suite-common
+          clean: false
       - name: Install test deps
         run: pip install pytest openpyxl odfpy
       - name: Run L1 adapter tests
