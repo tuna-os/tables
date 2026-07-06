@@ -12,14 +12,10 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.x'
-      - name: Create subprojects dir
-        run: mkdir -p subprojects
       - name: Checkout suite-common
-        uses: actions/checkout@v4
-        with:
-          repository: hanthor/suite-common
-          path: subprojects/suite-common
-          clean: false
+        run: |
+          mkdir -p subprojects
+          git clone --depth 1 https://github.com/hanthor/suite-common.git subprojects/suite-common
       - name: Install test deps
         run: pip install pytest openpyxl odfpy
       - name: Run L1 adapter tests
