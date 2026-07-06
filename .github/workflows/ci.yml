@@ -14,7 +14,7 @@ jobs:
           python-version: '3.x'
       - name: Checkout suite-common
         run: |
-          mkdir -p subprojects
+          rm -rf subprojects/suite-common
           git clone --depth 1 https://github.com/hanthor/suite-common.git subprojects/suite-common
       - name: Install test deps
         run: pip install pytest openpyxl odfpy
