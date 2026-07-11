@@ -1,5 +1,15 @@
 # Tables
 
+> ⚠️ **DEPRECATED — Superseded by the Rust rewrite.**
+>
+> This Python version is in **bugfix-only maintenance**. New feature development
+> has moved to the [gtk-office-suite](https://github.com/tuna-os/gtk-office-suite)
+> monorepo (`tables` crate). The Rust version is already distributed via Flatpak
+> as `org.tunaos.tables-rust`.
+>
+> See [gtk-office-suite#82](https://github.com/tuna-os/gtk-office-suite/issues/82)
+> for the migration plan.
+
 Spreadsheet application for the [TunaOS](https://github.com/tuna-os) GNOME office suite.
 
 Powered by [Jspreadsheet CE](https://jspreadsheet.com/) and [HyperFormula](https://hyperformula.handsontable.com/)
