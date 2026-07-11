@@ -13,10 +13,9 @@ jobs:
         with:
           python-version: '3.x'
       - name: Checkout suite-common
-        uses: actions/checkout@v4
-        with:
-          repository: hanthor/suite-common
-          path: subprojects/suite-common
+        run: |
+          rm -rf subprojects/suite-common
+          git clone --depth 1 https://github.com/hanthor/suite-common.git subprojects/suite-common
       - name: Install test deps
         run: pip install pytest openpyxl odfpy
       - name: Run L1 adapter tests
